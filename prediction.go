@@ -147,10 +147,17 @@ func (r *Client) createPredictionRequest(ctx context.Context, path string, data 
 }
 
 // CreatePrediction creates a prediction for a specific version of a model.
-func (r *Client) CreatePrediction(ctx context.Context, version string, input PredictionInput, webhook *Webhook, stream bool) (*Prediction, error) {
+func (r *Client) CreatePrediction(ctx context.Context, identifier string, input PredictionInput, webhook *Webhook, stream bool) (*Prediction, error) {
+	// Parse the identifier to extract version
+	id, err := ParseIdentifier(identifier)
+
 	path := "/predictions"
-	data := map[string]interface{}{
-		"version": version,
+	data := map[string]interface{}{}
+	// Set the model path or version in the data
+	if err == nil && id.Version == nil {
+		path = fmt.Sprintf("/models/%s/%s/predictions", id.Owner, id.Name)
+	} else {
+		data["version"] = identifier
 	}
 
 	req, err := r.createPredictionRequest(ctx, path, data, input, webhook, stream)
